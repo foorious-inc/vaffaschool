@@ -10,9 +10,9 @@ require_once $_SERVER['DOCUMENT_ROOT'] . '/src/functions.php';
 
 
 $schools = [];
-$raw_data =  get_data_from_folder(SCHOOLS_RAW_DATA_DIR, explode(',', SCHOOLS_RAW_DATA_FILE_TYPES), '@graph');
+$raw_data =  trovascuole_get_data_from_folder(SCHOOLS_RAW_DATA_DIR, explode(',', SCHOOLS_RAW_DATA_FILE_TYPES), '@graph');
 foreach ($raw_data as $raw_record) {
-    $school_data = school_data_cleanup($raw_record);
+    $school_data = self::handleRawRecord($raw_record);
 
     // add to others
     $schools[] = $school_data;
