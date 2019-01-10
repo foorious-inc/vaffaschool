@@ -34,7 +34,7 @@ function trovascuole_match_all($needles, $haystack) {
 }
 
 // looks for files in a folder, gets the data, and turns it into an array
-function get_data_from_folder($folder_path, $file_types, $json_root_prop='') {
+function trovascuole_get_data_from_folder($folder_path, $file_types, $json_root_prop='') {
     $CSV_SEPARATOR = ';';
 
     $records = [];
@@ -162,6 +162,7 @@ function get_data_from_folder($folder_path, $file_types, $json_root_prop='') {
                         if ($csv_data[$csv_data_i] === '') {
                             continue;
                         }
+                        
                         $csv_data_arr = explode($CSV_SEPARATOR, $csv_data[$csv_data_i]);
 
                         $cells = [];
@@ -201,96 +202,4 @@ function get_data_from_folder($folder_path, $file_types, $json_root_prop='') {
     }
 
     return $records;
-}
-
-function school_data_cleanup($raw_record) {
-    $school_data = array_map(function($data) {
-        if (is_array($data)) {
-            return $data;
-        }
-
-        $data = trim($data);
-        $data = str_replace(['Non Disponibile', 'Non disponibile'], '', $data);
-
-        return $data;
-    }, [
-        'id' => $raw_record['miur:CODICESCUOLA'],
-        'ref_id' => $raw_record['@id'],
-        'schoolyear' => substr($raw_record['miur:ANNOSCOLASTICO'], 0, 4),
-        'type' => $raw_record['miur:DESCRIZIONETIPOLOGIAGRADOISTRUZIONESCUOLA'],
-
-        'name' => $raw_record['miur:DENOMINAZIONESCUOLA'],
-
-        'email' => $raw_record['miur:INDIRIZZOEMAILSCUOLA'],
-        'certified_email' => $raw_record['miur:INDIRIZZOPECSCUOLA'],     
-        'website' => $raw_record['miur:SITOWEBSCUOLA'],
-
-        'address' => $raw_record['miur:INDIRIZZOSCUOLA'],
-        'postcode' => $raw_record['miur:CAPSCUOLA'],
-        'cad_code' => $raw_record['miur:CODICECOMUNESCUOLA'],
-        // '' => $data['miur:AREAGEOGRAFICA'],
-        // 'city_name' => $raw_record['miur:DESCRIZIONECOMUNE'],
-        // 'province_name' => $raw_record['miur:PROVINCIA'],
-        // 'region_name' => $raw_record['miur:REGIONE']
-    ]);
-
-    // handle name
-    $school_data['name'] = str_replace($school_data['type'], '', $school_data['name']); // remove school type
-    if ($school_data['name'] == $school_data['city_name']) { // when it's the only school and called "Scuola elementare Ponte a Sieve"
-        $school_data['name'] = $school_data['type'] . ' ' . $school_data['name'];
-    }
-
-    // handle email
-    if (!$school_data['email']) {
-        // set government one
-        $school_data['email'] = strtolower($school_data['id']) . '@istruzione.it';
-    }    
-
-    // handle location data
-    try {
-        if (!$school_data['cad_code']) {
-            throw new \Exception('postcode missing, cannot get location (ID: ' . $school_data['id'] . ')');
-        }
-
-        $location = \Foorious\Komunist::getCityByCadCode($school_data['cad_code'], \Foorious\Komunist::RETURN_TYPE_ARRAY);
-        if (!$location) {
-            throw new \Exception('cannot find location via cadastral code (code: ' . $school_data['cad_code'] . ')');
-        }
-
-        // add location data
-        $school_data['city_name'] = $location['name'];
-        $school_data['city_id'] = $location['id'];
-        $school_data['nuts3_2010_code'] = $location['nuts3_2010_code'];
-        $school_data['province_abbr'] = $location['license_plate_code'];
-        $school_data['region_name'] = $location['region']['name'];
-    } catch (\Exception $e) {
-        // do nothing, if anything we can log this, but we have to output data and some missing data is normal
-    }
-
-    // handle school parent
-    if (!empty($raw_record['miur:CODICEISTITUTORIFERIMENTO'])) {
-        // "": "FIIC853009",
-        // "": "COMPAGNI - CARDUCCI",
-        // "miur:INDICAZIONESEDEDIRETTIVO": "NO",
-        // "miur:INDICAZIONESEDEOMNICOMPRENSIVO": "Non Disponibile",
-        // "miur:SEDESCOLASTICA": "NO",        
-        if ($raw_record['miur:CODICEISTITUTORIFERIMENTO'] != $school_data['id']) {
-            $school_data['parent_school'] = [
-                'id' => $raw_record['miur:CODICEISTITUTORIFERIMENTO'],
-                'name' => $raw_record['miur:DENOMINAZIONEISTITUTORIFERIMENTO']
-            ];
-        }
-    }    
-
-    // etc (?)
-    // "miur:DESCRIZIONECARATTERISTICASCUOLA": "NORMALE"
-
-    // add debugging info
-    if (@reset(explode(':', $_SERVER['HTTP_HOST'])) == 'localhost') {
-        $school_data = array_merge($school_data, [
-            '_raw_record' => $raw_record,
-            '_location' => $location
-        ]);
-    }
-    return $school_data;
 }
