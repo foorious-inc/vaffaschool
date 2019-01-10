@@ -11,7 +11,7 @@ class Vaffaschool {
     private const SCHOOLS_DATA_SQLITE_FILE = VAFFASCHOOL_SCHOOLS_DATA_SQLITE_FILE; // location of Sqlite DB file
 
     // search
-    private const SEARCH_SCHOOLS_DATA_USE_DB = false; // whether to use DB while searching, or scan raw files one by one
+    private const SEARCH_SCHOOLS_DATA_USE_DB = true; // whether to use DB while searching, or scan raw files one by one
     private const SEARCH_ALGO_SIMPLE = 'simple';
     private const SEARCH_ALGO_FUZZY = 'fuzzy';
     private const SEARCH_ALGO = self::SEARCH_ALGO_FUZZY;
@@ -21,7 +21,7 @@ class Vaffaschool {
     private const SEARCH_SCHOOL_NAME_MULTIPLIER = 50;
     private const SEARCH_CITY_NAME_MULTIPLIER = 80;
 
-    private static function handleRawRecord($raw_record) {
+    public static function handleRawRecord($raw_record) {
         $school_data = array_map(function($data) {
             if (is_array($data)) {
                 return $data;
@@ -114,10 +114,16 @@ class Vaffaschool {
     }
 
     // get all schools
-    public static function getSchools() {
+    public static function getSchools($use_db=self::SEARCH_SCHOOLS_DATA_USE_DB) {
         $schools = [];
-        if (self::SEARCH_SCHOOLS_DATA_USE_DB) {
-            throw new \Exception('DB not supported yet');
+        $raw_data = [];
+
+        if ($use_db) {
+            $db = new \SQLite3(self::SCHOOLS_DATA_SQLITE_FILE);
+            $results = $db->query('SELECT * FROM schools');
+            while ($row = $results->fetchArray()) {
+                $schools[] = $row;
+            }
         } else {
             $raw_data = \vaffaschool_get_data_from_folder(self::SCHOOLS_RAW_DATA_DIR, explode(',', self::SCHOOLS_RAW_DATA_FILE_TYPES), '@graph');
 
