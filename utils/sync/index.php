@@ -4,20 +4,16 @@ ini_set('display_errors', 1);
 ini_set('memory_limit', '512M');
 set_time_limit(60*60*5);
 
-require_once $_SERVER['DOCUMENT_ROOT'] . '/config.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/vendor/autoload.php';
-require_once $_SERVER['DOCUMENT_ROOT'] . '/src/functions.php';
+require_once realpath(__DIR__ . '/../../') . '/config.php';
+
+require_once realpath(__DIR__ . '/../../') . '/vendor/autoload.php';
+
+require_once realpath(__DIR__ . '/../../') . '/src/functions.php';
+require_once realpath(__DIR__ . '/../../') . '/src/Foorious/Vaffaschool/Vaffaschool.php';
+use Foorious\Vaffaschool\Vaffaschool;
 
 
-$schools = [];
-$raw_data =  vaffaschool_get_data_from_folder(SCHOOLS_RAW_DATA_DIR, explode(',', SCHOOLS_RAW_DATA_FILE_TYPES), '@graph');
-foreach ($raw_data as $raw_record) {
-    $school_data = self::handleRawRecord($raw_record);
-
-    // add to others
-    $schools[] = $school_data;
-}
-
+$schools = Vaffaschool::getSchools(false);
 $num_schools = count($schools);
 echo '<p>' . $num_schools . ' total schools found.</p>';
 
@@ -35,30 +31,30 @@ try {
     // create table
     $query = <<<EOF
     CREATE TABLE schools(
-        id string, 
-        ref_id string, 
-        schoolyear int, 
-        type string, 
-        name string, 
-        email string, 
-        certified_email string, 
-        website string, 
-        address string, 
-        cad_code string, 
-        postcode string, 
-        city_name string, 
-        province_name string, 
-        region_name string, 
-        parent_school_id string, 
-        parent_school_name string, 
-        location_id string, 
+        id string,
+        ref_id string,
+        schoolyear int,
+        type string,
+        name string,
+        email string,
+        certified_email string,
+        website string,
+        address string,
+        cad_code string,
+        postcode string,
+        city_name string,
+        province_name string,
+        region_name string,
+        parent_school_id string,
+        parent_school_name string,
+        location_id string,
         nuts3_2010_code string
     )
 EOF;
     $result = $pdo->query($query);
     if ($result == false) {
         throw new \Exception('error while running query: ' . implode(', ', $pdo->errorInfo()));
-    }    
+    }
 
     // write
     foreach ($schools as $school) {
@@ -77,7 +73,7 @@ EOF;
             postcode,
             city_name,
             province_name,
-            region_name, 
+            region_name,
             parent_school_id,
             parent_school_name,
             location_id,
@@ -119,7 +115,7 @@ EOF;
         $stmt->bindParam(11, $school['postcode']);
         $stmt->bindParam(12, $school['city_name']);
         $stmt->bindParam(13, $school['province_name']);
-        $stmt->bindParam(14, $school['region_name']); 
+        $stmt->bindParam(14, $school['region_name']);
         $stmt->bindParam(15, $school['parent_school']['id']);
         $stmt->bindParam(16, $school['parent_school']['name']);
         $stmt->bindParam(17, $school['location_id']);
