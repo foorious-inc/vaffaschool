@@ -7,7 +7,6 @@
         }
     ],    
     "require": {
-        "phpoffice/phpspreadsheet": "^1.4",
         "wyndow/fuzzywuzzy": "^0.6.0",
         "foorious/komunist": "^0.2"
     },
