@@ -1,5 +1,5 @@
 <?php
-function trovascuole_match($needles, $haystack) {
+function vaffaschool_match($needles, $haystack) {
     foreach($needles as $needle){
         if (stripos($haystack, $needle) !== false) {
             return true;
@@ -8,7 +8,7 @@ function trovascuole_match($needles, $haystack) {
     return false;
 }
 
-function trovascuole_match_get_score($needles, $haystack) {
+function vaffaschool_match_get_score($needles, $haystack) {
     $num_matches = 0;
 
     foreach($needles as $needle) {
@@ -20,7 +20,7 @@ function trovascuole_match_get_score($needles, $haystack) {
     return $num_matches / count($needles);
 }
 
-function trovascuole_match_all($needles, $haystack) {
+function vaffaschool_match_all($needles, $haystack) {
     if (empty($needles)){
         return false;
     }
@@ -34,7 +34,7 @@ function trovascuole_match_all($needles, $haystack) {
 }
 
 // looks for files in a folder, gets the data, and turns it into an array
-function trovascuole_get_data_from_folder($folder_path, $file_types, $json_root_prop='') {
+function vaffaschool_get_data_from_folder($folder_path, $file_types, $json_root_prop='') {
     $CSV_SEPARATOR = ';';
 
     $records = [];

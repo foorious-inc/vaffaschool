@@ -1,4 +1,4 @@
-# 🏫 Trovascuole
+# 🏫 Vaffaschool
 API to get Italian schools
 
 ## Run

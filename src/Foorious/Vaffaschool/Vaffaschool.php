@@ -1,14 +1,14 @@
 <?php
-namespace Foorious\Trovascuole;
+namespace Foorious\Vaffaschool;
 
-define('TROVASCUOLE_BASE_DIR', realpath(__DIR__ . '/../../../'));
-define('TROVASCUOLE_SCHOOLS_RAW_DATA_DIR', rtrim(TROVASCUOLE_BASE_DIR . '/data/raw/MIUR/2018/', '/'));
-define('TROVASCUOLE_SCHOOLS_DATA_SQLITE_FILE', TROVASCUOLE_BASE_DIR . '/data/schools.sqlite');
+define('VAFFASCHOOL_BASE_DIR', realpath(__DIR__ . '/../../../'));
+define('VAFFASCHOOL_SCHOOLS_RAW_DATA_DIR', rtrim(VAFFASCHOOL_BASE_DIR . '/data/raw/MIUR/2018/', '/'));
+define('VAFFASCHOOL_SCHOOLS_DATA_SQLITE_FILE', VAFFASCHOOL_BASE_DIR . '/data/schools.sqlite');
 
-class Trovascuole {
-    private const SCHOOLS_RAW_DATA_DIR = TROVASCUOLE_SCHOOLS_RAW_DATA_DIR; // location of raw data
+class Vaffaschool {
+    private const SCHOOLS_RAW_DATA_DIR = VAFFASCHOOL_SCHOOLS_RAW_DATA_DIR; // location of raw data
     private const SCHOOLS_RAW_DATA_FILE_TYPES = 'json'; // extensions of files that we want to process, separated by comma for multiple file types
-    private const SCHOOLS_DATA_SQLITE_FILE = TROVASCUOLE_SCHOOLS_DATA_SQLITE_FILE; // location of Sqlite DB file
+    private const SCHOOLS_DATA_SQLITE_FILE = VAFFASCHOOL_SCHOOLS_DATA_SQLITE_FILE; // location of Sqlite DB file
 
     // search
     private const SEARCH_SCHOOLS_DATA_USE_DB = false; // whether to use DB while searching, or scan raw files one by one
@@ -119,7 +119,7 @@ class Trovascuole {
         if (self::SEARCH_SCHOOLS_DATA_USE_DB) {
             throw new \Exception('DB not supported yet');
         } else {
-            $raw_data = \trovascuole_get_data_from_folder(self::SCHOOLS_RAW_DATA_DIR, explode(',', self::SCHOOLS_RAW_DATA_FILE_TYPES), '@graph');
+            $raw_data = \vaffaschool_get_data_from_folder(self::SCHOOLS_RAW_DATA_DIR, explode(',', self::SCHOOLS_RAW_DATA_FILE_TYPES), '@graph');
 
             $i=0;
             foreach ($raw_data as $raw_record) {
@@ -180,8 +180,8 @@ class Trovascuole {
                 $score = 0;
 
                 // do simple search first
-                $school_name_score = \trovascuole_match_get_score($needles, $school['name']);
-                $city_name_score = \trovascuole_match_get_score($needles, $school['city_name']);
+                $school_name_score = \vaffaschool_match_get_score($needles, $school['name']);
+                $city_name_score = \vaffaschool_match_get_score($needles, $school['city_name']);
 
                 // if likely not a match, cut it short
                 if (!$school_name_score) {
