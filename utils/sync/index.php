@@ -28,76 +28,93 @@ try {
         throw new \Exception("cannot open the database");
     }
 
+    $queries = [];
+
     // create table
-    $query = <<<EOF
-    CREATE TABLE schools(
-        id string,
-        ref_id string,
-        schoolyear int,
-        type string,
-        name string,
-        email string,
-        certified_email string,
-        website string,
-        address string,
-        cad_code string,
-        postcode string,
-        city_name string,
-        province_name string,
-        region_name string,
-        parent_school_id string,
-        parent_school_name string,
-        location_id string,
-        nuts3_2010_code string
-    )
+    $queries[] = <<<EOF
+        CREATE TABLE schools(
+            id string,
+            ref_id string,
+            schoolyear int,
+            type string,
+            name string,
+            email string,
+            certified_email string,
+            website string,
+            address string,
+            cad_code string,
+            postcode string,
+            city_name string,
+            province_name string,
+            region_name string,
+            parent_school_id string,
+            parent_school_name string,
+            location_id string,
+            nuts3_2010_code string
+        )
 EOF;
-    $result = $pdo->query($query);
-    if ($result == false) {
-        throw new \Exception('error while running query: ' . implode(', ', $pdo->errorInfo()));
+
+    // add indexes
+    $queries[] = "CREATE INDEX index_schoolyear         ON schools (schoolyear)";
+    $queries[] = "CREATE INDEX index_type               ON schools (type)";
+    $queries[] = "CREATE INDEX index_name               ON schools (name)";
+    $queries[] = "CREATE INDEX index_address            ON schools (address)";
+    $queries[] = "CREATE INDEX index_cad_code           ON schools (cad_code)";
+    $queries[] = "CREATE INDEX index_city_name          ON schools (city_name)";
+    $queries[] = "CREATE INDEX index_province_name      ON schools (province_name)";
+    $queries[] = "CREATE INDEX index_region_name        ON schools (region_name)";
+    $queries[] = "CREATE INDEX index_location_id        ON schools (location_id)";
+    $queries[] = "CREATE INDEX index_nuts3_2010_code    ON schools (nuts3_2010_code)";
+
+    foreach ($queries as $query) {
+        $result = $pdo->query($query);
+        if ($result == false) {
+            throw new \Exception('error while running query: ' . implode(', ', $pdo->errorInfo()));
+        }
     }
 
     // write
     foreach ($schools as $school) {
         $query = <<<EOF
-        INSERT INTO schools(
-            id,
-            ref_id,
-            schoolyear,
-            type,
-            name,
-            email,
-            certified_email,
-            website,
-            address,
-            cad_code,
-            postcode,
-            city_name,
-            province_name,
-            region_name,
-            parent_school_id,
-            parent_school_name,
-            location_id,
-            nuts3_2010_code
-        ) VALUES (
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?,
-            ?
-        )
+            INSERT INTO schools(
+                id,
+                ref_id,
+                schoolyear,
+                type,
+                name,
+                email,
+                certified_email,
+                website,
+                address,
+                cad_code,
+                postcode,
+                city_name,
+                province_name,
+                region_name,
+                parent_school_id,
+                parent_school_name,
+                location_id,
+                nuts3_2010_code
+            ) VALUES (
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?,
+                ?
+            )
 EOF;
 
         $stmt = $pdo->prepare($query);
