@@ -141,7 +141,7 @@ class Vaffaschool {
         return $schools;
     }
 
-    // // search schools
+    // search schools
     public static function getSchoolsBySearchKey($search_key) {
         try {
             // cut short if no search
@@ -151,45 +151,50 @@ class Vaffaschool {
 
             $script_time_start = microtime(true);
 
-            // get schools
+
+            $schools = [];
+            $raw_data = [];
+
+            // figure out needles
+            $search = $search_key;
+            $search = str_replace([',', ';', '.'], ' ', $search);
+            $search = trim($search);
+            $search = str_replace('   ', ' ', $search);
+            $search = str_replace('  ', ' ', $search);
+            $needles = explode(' ', $search);
+
+            // get schools that could match our search key
             $school_cache_time_start = microtime(true);
 
-            $schools = self::getSchools();
+            $db = new \SQLite3(self::SCHOOLS_DATA_SQLITE_FILE);
+            $query = "SELECT * FROM schools WHERE " . implode(' OR ', array_map(function($needle) {
+                return "name LIKE '%$needle%' OR city_name LIKE '%$needle%'";
+            }, $needles));
+            $results = $db->query($query);
+            while ($row = $results->fetchArray()) {
+                $schools[] = $row;
+            }
+
             $num_schools = count($schools);
 
             $school_cache_time_end = microtime(true);
             $school_cache_time = $school_cache_time_end - $school_cache_time_start;
 
-            echo('Cache took: ' . $school_cache_time);
+            // echo 'cache took: ' . $school_cache_time . ' and we have ' . $num_schools . ' schools';
 
-            // do stuff with $schools
+            // refine results
             $matches = [];
             foreach ($schools as $school) {
-                // if ($school['schoolyear'] != date('Y')) {
-                //     continue;
-                // }
-
-                // if (is_array($matches) && count($matches) > MAX_MATCHES) {
-                //     break;
-                // }
-
                 $score = 0;
 
                 // adjust score by keywords
-                $search = $search_key;
-                $search = str_replace([',', ';', '.'], ' ', $search);
-                $search = trim($search);
-                $search = str_replace('   ', ' ', $search);
-                $search = str_replace('  ', ' ', $search);
-                $needles = explode(' ', $search);
-
                 $score = 0;
 
                 // do simple search first
                 $school_name_score = \vaffaschool_match_get_score($needles, $school['name']);
                 $city_name_score = \vaffaschool_match_get_score($needles, $school['city_name']);
 
-                // if likely not a match, cut it short
+                // if search key not in name, it's probably a crappy match
                 if (!$school_name_score) {
                     continue;
                 }
@@ -243,7 +248,7 @@ class Vaffaschool {
             $script_time_end = microtime(true);
             $script_time = $script_time_end - $script_time_start;
 
-            echo 'SCRIPT took: ' . $script_time;
+            // echo 'SCRIPT took: ' . $script_time;
 
             return $matched_schools;
         } catch (\Exception $e) {
