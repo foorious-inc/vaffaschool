@@ -149,9 +149,6 @@ class Vaffaschool {
                 throw new \Exception('search keyword mandatory');
             }
 
-            $script_time_start = microtime(true);
-
-
             $schools = [];
             $raw_data = [];
 
@@ -164,8 +161,6 @@ class Vaffaschool {
             $needles = explode(' ', $search);
 
             // get schools that could match our search key
-            $school_cache_time_start = microtime(true);
-
             $db = new \SQLite3(self::SCHOOLS_DATA_SQLITE_FILE);
             $query = "SELECT * FROM schools WHERE " . implode(' OR ', array_map(function($needle) {
                 return "name LIKE '%$needle%' OR city_name LIKE '%$needle%'";
@@ -176,11 +171,6 @@ class Vaffaschool {
             }
 
             $num_schools = count($schools);
-
-            $school_cache_time_end = microtime(true);
-            $school_cache_time = $school_cache_time_end - $school_cache_time_start;
-
-            // echo 'cache took: ' . $school_cache_time . ' and we have ' . $num_schools . ' schools';
 
             // refine results
             $matches = [];
@@ -244,11 +234,6 @@ class Vaffaschool {
 
                 $matched_schools[] = $school;
             }
-
-            $script_time_end = microtime(true);
-            $script_time = $script_time_end - $script_time_start;
-
-            // echo 'SCRIPT took: ' . $script_time;
 
             return $matched_schools;
         } catch (\Exception $e) {
