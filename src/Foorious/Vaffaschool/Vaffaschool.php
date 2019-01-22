@@ -21,6 +21,15 @@ class Vaffaschool {
     private const SEARCH_SCHOOL_NAME_MULTIPLIER = 50;
     private const SEARCH_CITY_NAME_MULTIPLIER = 80;
 
+    private static function getPdo() {
+        $pdo = new \PDO('sqlite:/' . self::SCHOOLS_DATA_SQLITE_FILE);
+        if (!$pdo) {
+            throw new \Exception("cannot open the database");
+        }
+
+        return $pdo;
+    }
+
     public static function handleRawRecord($raw_record) {
         $school_data = array_map(function($data) {
             if (is_array($data)) {
@@ -161,15 +170,17 @@ class Vaffaschool {
             $needles = explode(' ', $search);
 
             // get schools that could match our search key
-            $db = new \SQLite3(self::SCHOOLS_DATA_SQLITE_FILE);
+            $pdo = self::getPdo();
+
             $query = "SELECT * FROM schools WHERE " . implode(' OR ', array_map(function($needle) {
-                return "name LIKE '%$needle%' OR city_name LIKE '%$needle%'";
+                return "name LIKE :search_key OR city_name LIKE :search_key";
             }, $needles));
-            $results = $db->query($query);
-            while ($row = $results->fetchArray()) {
+
+            $stmt = $pdo->prepare($query);
+            $stmt->execute([':search_key' => '%' . $search_key . '%']);
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
                 $schools[] = $row;
             }
-
             $num_schools = count($schools);
 
             // refine results
