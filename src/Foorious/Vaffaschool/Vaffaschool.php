@@ -22,12 +22,20 @@ class Vaffaschool {
     private const SEARCH_CITY_NAME_MULTIPLIER = 80;
 
     private static function getPdo() {
-        if (!function_exists('sqlite_open')) {
-            throw new \Exception('cannot read schools, Sqlite PHP extension missing');
-        }
-
+        // check if file OK
         if (!is_readable(self::SCHOOLS_DATA_SQLITE_FILE)) {
             throw new \Exception('cannot read schools, DB file is not readable');
+        }
+        // check if we have Sqlite
+        $has_sqlite = false;
+        $avail_drivers = \PDO::getAvailableDrivers();
+        foreach ($avail_drivers as $driver_name) {
+            if ($driver_name == 'sqlite') {
+                $has_sqlite = true;
+            }
+        }
+        if (!$has_sqlite) {
+            throw new \Exception('cannot read schools, Sqlite PHP extension missing');
         }
 
         $pdo = new \PDO('sqlite:/' . self::SCHOOLS_DATA_SQLITE_FILE);
