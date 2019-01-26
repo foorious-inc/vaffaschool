@@ -5,6 +5,8 @@ define('VAFFASCHOOL_BASE_DIR', realpath(__DIR__ . '/../../../'));
 define('VAFFASCHOOL_SCHOOLS_RAW_DATA_DIR', rtrim(VAFFASCHOOL_BASE_DIR . '/data/raw/MIUR/2018/', '/'));
 define('VAFFASCHOOL_SCHOOLS_DATA_SQLITE_FILE', VAFFASCHOOL_BASE_DIR . '/data/schools.sqlite');
 
+require_once VAFFASCHOOL_BASE_DIR . '/src/functions.php';
+
 class Vaffaschool {
     private const SCHOOLS_RAW_DATA_DIR = VAFFASCHOOL_SCHOOLS_RAW_DATA_DIR; // location of raw data
     private const SCHOOLS_RAW_DATA_FILE_TYPES = 'json'; // extensions of files that we want to process, separated by comma for multiple file types
