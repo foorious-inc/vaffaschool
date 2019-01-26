@@ -43,6 +43,8 @@ class Vaffaschool {
             throw new \Exception("cannot open the database");
         }
 
+        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+
         return $pdo;
     }
 
@@ -179,25 +181,82 @@ class Vaffaschool {
 
             // figure out needles
             $search = $search_key;
+            $search = str_ireplace(['scuola primaria'], '', $search);
             $search = str_replace([',', ';', '.'], ' ', $search);
             $search = trim($search);
             $search = str_replace('   ', ' ', $search);
             $search = str_replace('  ', ' ', $search);
+            $search = trim($search);
             $needles = explode(' ', $search);
 
             // get schools that could match our search key
-            $pdo = self::getPdo();
+            $statements = [];
+            $params = [];
+            for ($i=0; $i<count($needles); $i++) {
+                $needle = trim($needles[$i]);
 
-            $query = "SELECT * FROM schools WHERE " . implode(' OR ', array_map(function($needle) {
-                return "name LIKE :search_key OR city_name LIKE :search_key";
-            }, $needles));
+                $skip_needle = false;
+                // ignore common words (articles, pronouns, very common words etc.)
+                $words = [
+                    'di',
+                    'del',
+                    'dei',
+                    'dello',
+                    'della',
+                    'a',
+                    'al',
+                    'allo',
+                    'alla',
+                    'alle',
+                    'SCUOLA',
+                    'Istituto',
+                    'Comprensivo',
+                    'primaria',
+                    'primaria',
+                    'Plesso',
+                    'san',
+                    'santo',
+                    'santa',
+                    'Materna',
+                    'Infanzia'
+                ];
+                foreach ($words as $word) {
+                    if (strtolower($needle) == strtolower($word)) {
+                        $skip_needle = true;
 
-            $stmt = $pdo->prepare($query);
-            $stmt->execute([':search_key' => '%' . $search_key . '%']);
-            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                $schools[] = $row;
+                        break;
+                    }
+                }
+                // ignore words that are too short
+                if (strlen($needle) < 5) {
+                    $skip_needle = true;
+                }
+
+                if ($skip_needle) {
+                   continue;
+                }
+
+                $param_key = ":needle_" . (count($params)+1);
+                $statements[] = "name LIKE $param_key OR city_name LIKE $param_key";
+                $params[$param_key] = '%' . $needle . '%';
             }
-            $num_schools = count($schools);
+
+            $pdo = self::getPdo();
+            if (!$pdo) {
+                throw new \Exception('no PDO');
+            }
+            $query = "SELECT * FROM schools WHERE " . implode(' OR ', $statements);
+
+            try {
+                $stmt = $pdo->prepare($query);
+                $stmt->execute($params);
+
+                while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                    $schools[] = $row;
+                }
+            } catch (\Exception $e) {
+                // fail silently
+            }
 
             // refine results
             $matches = [];
