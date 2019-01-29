@@ -1,7 +1,7 @@
 {
     "name": "foorious-inc/vaffaschool",
     "description": "Library for working with Italian schools",
-    "version": "0.3.1",
+    "version": "0.3.2",
     "license": "MIT",
     "authors": [
         {
@@ -27,7 +27,7 @@
     "minimum-stability": "dev",
     "require": {
         "wyndow/fuzzywuzzy": "^0.6.0",
-        "foorious-inc/komunist": "^0.3"
+        "foorious-inc/komunist": "^0.4"
     },
     "autoload": {
         "psr-4": {
