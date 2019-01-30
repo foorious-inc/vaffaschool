@@ -274,7 +274,7 @@ class Vaffaschool {
 
                 // if search key not in name, it's probably a crappy match
                 if (!$school_name_score) {
-                    continue;
+                    // continue;
                 }
 
                 $school_name_score *= self::SEARCH_SCHOOL_NAME_MULTIPLIER;
