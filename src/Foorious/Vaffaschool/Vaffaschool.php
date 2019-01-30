@@ -295,33 +295,26 @@ class Vaffaschool {
                         throw new \Exception('Invalid search algorithm');
                 }
 
-                $key = $score + mt_rand() / mt_getrandmax();
+                // fix some data
+                $school['name'] = trim($school['name']);
 
+                // add dev-only some data
                 $school = array_merge($school, [
-                    '_debugging' => [
+                    '_score' => $score,
+                    '_score_details' => [
                         'school_name_score' => $school_name_score,
                         'city_name_score' => $city_name_score,
                         'fuzzy_search_score' => $fuzz_score
                     ]
                 ]);
 
-                $matches[$key] = $school;
+                $matches[] = $school;
             }
 
             // sort matches by score
-            if (is_array($matches) && count($matches)) {
-                krsort($matches);
-            }
-            $matched_schools = [];
-            foreach ($matches as $score => $school) {
-                // clean up name
-                $school['name'] = trim($school['name']);
-
-                // add score
-                $school['_score'] = $score;
-
-                $matched_schools[] = $school;
-            }
+            $matched_schools = array_reverse(array_values(array_sort($matches, function ($school) {
+                return $school['_score'];
+            })));
 
             return $matched_schools;
         } catch (\Exception $e) {
