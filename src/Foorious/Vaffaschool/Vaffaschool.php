@@ -150,8 +150,11 @@ class Vaffaschool {
         if ($use_db) {
             $db = new \SQLite3(self::SCHOOLS_DATA_SQLITE_FILE);
             $results = $db->query('SELECT * FROM schools');
-            while ($row = $results->fetchArray()) {
-                $schools[] = $row;
+            while ($school = $results->fetchArray()) {
+                if ($school['parent_school_id']) {
+                    $school['parent_school'] = self::getSchoolById($school['parent_school_id']);
+                }
+                $schools[] = $school;
             }
         } else {
             $raw_data = \vaffaschool_get_data_from_folder(self::SCHOOLS_RAW_DATA_DIR, explode(',', self::SCHOOLS_RAW_DATA_FILE_TYPES), '@graph');
@@ -322,6 +325,15 @@ class Vaffaschool {
 
                 // fix some data
                 $school['name'] = trim($school['name']);
+
+                // add some data
+                if ($school['parent_school_id']) {
+                    $school['parent_school'] = self::getSchoolById($school['parent_school_id']);
+                }
+                $school['sibling_schools'] = [
+                    'COMING',
+                    'SOON'
+                ];
 
                 // add dev-only some data
                 $school = array_merge($school, [
