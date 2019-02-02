@@ -1,19 +1,19 @@
 {
     "name": "foorious-inc/vaffaschool",
     "description": "Library for working with Italian schools",
-    "version": "0.4.3",
+    "version": "0.4.4",
     "license": "MIT",
     "authors": [
-        {
-            "name": "Olek",
-            "email": "karpowiczolek@gmail.com",
-            "homepage": "https://github.com/karpowicz/",
-            "role": "Developer"
-        },
         {
             "name": "Niccolo Brogi",
             "email": "me@nbrogi.com",
             "homepage": "https://github.com/nkkollaw/",
+            "role": "Developer"
+        },        
+        {
+            "name": "Olek",
+            "email": "karpowiczolek@gmail.com",
+            "homepage": "https://github.com/karpowicz/",
             "role": "Developer"
         }
     ],
