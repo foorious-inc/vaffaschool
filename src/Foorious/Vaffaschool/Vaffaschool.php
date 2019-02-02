@@ -241,6 +241,11 @@ class Vaffaschool {
                 $param_key = ":needle_" . (count($params)+1);
                 $statements[] = "name LIKE $param_key OR city_name LIKE $param_key";
                 $params[$param_key] = '%' . $needle . '%';
+
+                // also search by ID
+                $param_key_exact = $param_key . '_exact';
+                $statements[] = "id LIKE $param_key_exact";
+                $params[$param_key_exact] = $needle;
             }
 
             $pdo = self::getPdo();
