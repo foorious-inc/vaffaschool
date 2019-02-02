@@ -170,6 +170,26 @@ class Vaffaschool {
         return $schools;
     }
 
+    public static function getSchoolById($school_id) {
+        $pdo = self::getPdo();
+        if (!$pdo) {
+            throw new \Exception('no PDO');
+        }
+
+        $query = "SELECT * FROM schools WHERE id = :school_id";
+        try {
+            $stmt = $pdo->prepare($query);
+            $stmt->execute([
+                ':school_id' => $school_id
+            ]);
+            $school = $stmt->fetch(\PDO::FETCH_ASSOC);
+        } catch (\Exception $e) {
+            // fail silently
+        }
+
+        return $school;
+    }
+
     // search schools
     public static function getSchoolsBySearchKey($search_key) {
         try {
