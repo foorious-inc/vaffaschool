@@ -44,6 +44,37 @@ class Vaffaschool {
         return $pdo;
     }
 
+    // fix some data, separate parent school from school
+    private static function getSchoolFromRow($row) {
+        // clean up row
+        foreach ($row as $k=>$v) {
+            if (is_numeric($k)) {
+                unset($row[$k]);
+            }
+        }
+
+        // separate school from parent
+        $school_data = [];
+        $parent_school_data = [];
+        foreach ($row as $k=>$v) {
+            if (strpos($k, 'parent_school_') === 0) {
+                $parent_school_data[str_replace('parent_school_', '', $k)] = $v;
+                unset($school_data[$k]);
+            } else {
+                $school_data[$k] = $v;
+            }
+        }
+        if ($row['parent_school_id']) {
+            $school_data['parent_school_id'] = $parent_school_data['id']; // for compatibility
+            $school_data['parent_school'] = $parent_school_data;
+        }
+
+        // fix other data on the fly
+        $school_data['name'] = trim($school_data['name']);
+
+        return $school_data;
+    }
+
     private static function match($needles, $haystack) {
         foreach($needles as $needle){
             if (stripos($haystack, $needle) !== false) {
@@ -85,11 +116,8 @@ class Vaffaschool {
 
         $db = new \SQLite3(VAFFASCHOOL_SQLITE_FILE);
         $results = $db->query('SELECT * FROM schools');
-        while ($school = $results->fetchArray()) {
-            if ($school['parent_school_id']) {
-                $school['parent_school'] = self::getSchoolById($school['parent_school_id']);
-            }
-            $schools[] = $school;
+        while ($row = $results->fetchArray()) {
+            $schools[] = self::getSchoolFromRow($row);
         }
 
         return $schools;
@@ -107,7 +135,7 @@ class Vaffaschool {
             $stmt->execute([
                 ':school_id' => $school_id
             ]);
-            $school = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $school = self::getSchoolFromRow($stmt->fetch(\PDO::FETCH_ASSOC));
         } catch (\Exception $e) {
             // fail silently
         }
@@ -204,7 +232,7 @@ class Vaffaschool {
                 $stmt->execute($params);
 
                 while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-                    $schools[] = $row;
+                    $schools[] = self::getSchoolFromRow($row);
                 }
             } catch (\Exception $e) {
                 // fail silently
