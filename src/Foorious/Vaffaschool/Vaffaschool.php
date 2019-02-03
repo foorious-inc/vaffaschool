@@ -1,31 +1,25 @@
 <?php
 namespace Foorious\Vaffaschool;
 
-define('VAFFASCHOOL_BASE_DIR', realpath(__DIR__ . '/../../../'));
-define('VAFFASCHOOL_SCHOOLS_RAW_DATA_DIR', rtrim(VAFFASCHOOL_BASE_DIR . '/data/raw/MIUR/2018/', '/'));
-define('VAFFASCHOOL_SCHOOLS_DATA_SQLITE_FILE', VAFFASCHOOL_BASE_DIR . '/data/schools.sqlite');
-
-require_once VAFFASCHOOL_BASE_DIR . '/src/functions.php';
+require_once realpath(__DIR__ . '/../../../') . '/config.php';
 
 class Vaffaschool {
-    private const SCHOOLS_RAW_DATA_DIR = VAFFASCHOOL_SCHOOLS_RAW_DATA_DIR; // location of raw data
-    private const SCHOOLS_RAW_DATA_FILE_TYPES = 'json'; // extensions of files that we want to process, separated by comma for multiple file types
-    private const SCHOOLS_DATA_SQLITE_FILE = VAFFASCHOOL_SCHOOLS_DATA_SQLITE_FILE; // location of Sqlite DB file
+    private const VAFFASCHOOL_SQLITE_FILE = VAFFASCHOOL_SQLITE_FILE;
 
     // search
-    private const SEARCH_SCHOOLS_DATA_USE_DB = true; // whether to use DB while searching, or scan raw files one by one
     private const SEARCH_ALGO_SIMPLE = 'simple';
     private const SEARCH_ALGO_FUZZY = 'fuzzy';
     private const SEARCH_ALGO = self::SEARCH_ALGO_FUZZY;
-
-    // search adjustments
-    /// adjust weight for matching name vs. location
     private const SEARCH_SCHOOL_NAME_MULTIPLIER = 50;
     private const SEARCH_CITY_NAME_MULTIPLIER = 80;
 
     private static function getPdo() {
         // check if file OK
-        if (!is_readable(self::SCHOOLS_DATA_SQLITE_FILE)) {
+        if (!is_file(VAFFASCHOOL_SQLITE_FILE)) {
+            echo VAFFASCHOOL_SQLITE_FILE;
+            throw new \Exception('cannot find DB file');
+        }
+        if (!is_readable(VAFFASCHOOL_SQLITE_FILE)) {
             throw new \Exception('cannot read schools, DB file is not readable');
         }
         // check if we have Sqlite
@@ -40,7 +34,7 @@ class Vaffaschool {
             throw new \Exception('cannot read schools, Sqlite PHP extension missing');
         }
 
-        $pdo = new \PDO('sqlite:/' . self::SCHOOLS_DATA_SQLITE_FILE);
+        $pdo = new \PDO('sqlite:/' . VAFFASCHOOL_SQLITE_FILE);
         if (!$pdo) {
             throw new \Exception("cannot open the database");
         }
@@ -50,124 +44,52 @@ class Vaffaschool {
         return $pdo;
     }
 
-    public static function handleRawRecord($raw_record) {
-        $school_data = array_map(function($data) {
-            if (is_array($data)) {
-                return $data;
+    private static function match($needles, $haystack) {
+        foreach($needles as $needle){
+            if (stripos($haystack, $needle) !== false) {
+                return true;
             }
-
-            $data = trim($data);
-            $data = str_replace(['Non Disponibile', 'Non disponibile'], '', $data);
-
-            return $data;
-        }, [
-            'id' => $raw_record['miur:CODICESCUOLA'],
-            'ref_id' => $raw_record['@id'],
-            'schoolyear' => substr($raw_record['miur:ANNOSCOLASTICO'], 0, 4),
-            'type' => $raw_record['miur:DESCRIZIONETIPOLOGIAGRADOISTRUZIONESCUOLA'],
-
-            'name' => $raw_record['miur:DENOMINAZIONESCUOLA'],
-
-            'email' => $raw_record['miur:INDIRIZZOEMAILSCUOLA'],
-            'certified_email' => $raw_record['miur:INDIRIZZOPECSCUOLA'],
-            'website' => $raw_record['miur:SITOWEBSCUOLA'],
-
-            'address' => $raw_record['miur:INDIRIZZOSCUOLA'],
-            'postcode' => $raw_record['miur:CAPSCUOLA'],
-            'cad_code' => $raw_record['miur:CODICECOMUNESCUOLA'],
-            // '' => $data['miur:AREAGEOGRAFICA'],
-            'city_name' => $raw_record['miur:DESCRIZIONECOMUNE'],
-            // 'province_name' => $raw_record['miur:PROVINCIA'],
-            // 'region_name' => $raw_record['miur:REGIONE']
-        ]);
-
-        // handle name
-        $school_data['name'] = str_replace($school_data['type'], '', $school_data['name']); // remove school type
-        if ($school_data['name'] == $school_data['city_name']) { // when it's the only school and called "Scuola elementare Ponte a Sieve"
-            $school_data['name'] = $school_data['type'] . ' ' . $school_data['name'];
         }
+        return false;
+    }
 
-        // handle email
-        if (!$school_data['email']) {
-            // set government one
-            $school_data['email'] = strtolower($school_data['id']) . '@istruzione.it';
-        }
+    private static function matchGetScore($needles, $haystack) {
+        $num_matches = 0;
 
-        // handle location data
-        try {
-            if (!$school_data['cad_code']) {
-                throw new \Exception('postcode missing, cannot get location (ID: ' . $school_data['id'] . ')');
-            }
-
-            $location = \Foorious\Komunist::getCityByCadCode($school_data['cad_code'], \Foorious\Komunist::RETURN_TYPE_ARRAY);
-            if (!$location) {
-                throw new \Exception('cannot find location via cadastral code (code: ' . $school_data['cad_code'] . ')');
-            }
-
-            // add location data
-            $school_data['city_name'] = $location['name'];
-            $school_data['city_id'] = $location['id'];
-            $school_data['nuts3_2010_code'] = $location['nuts3_2010_code'];
-            $school_data['province_abbr'] = $location['license_plate_code'];
-            $school_data['region_name'] = $location['region']['name'];
-        } catch (\Exception $e) {
-            // do nothing, if anything we can log this, but we have to output data and some missing data is normal
-        }
-
-        // handle school parent
-        if (!empty($raw_record['miur:CODICEISTITUTORIFERIMENTO'])) {
-            // "": "FIIC853009",
-            // "": "COMPAGNI - CARDUCCI",
-            // "miur:INDICAZIONESEDEDIRETTIVO": "NO",
-            // "miur:INDICAZIONESEDEOMNICOMPRENSIVO": "Non Disponibile",
-            // "miur:SEDESCOLASTICA": "NO",
-            if ($raw_record['miur:CODICEISTITUTORIFERIMENTO'] != $school_data['id']) {
-                $school_data['parent_school'] = [
-                    'id' => $raw_record['miur:CODICEISTITUTORIFERIMENTO'],
-                    'name' => $raw_record['miur:DENOMINAZIONEISTITUTORIFERIMENTO']
-                ];
+        foreach($needles as $needle) {
+            if (stripos($haystack, $needle) !== false) {
+                $num_matches++;
             }
         }
 
-        // etc (?)
-        // "miur:DESCRIZIONECARATTERISTICASCUOLA": "NORMALE"
+        return $num_matches / count($needles);
+    }
 
-        // add debugging info
-        if (@reset(explode(':', $_SERVER['HTTP_HOST'])) == 'localhost') {
-            $school_data = array_merge($school_data, [
-                '_raw_record' => $raw_record,
-                '_location' => $location
-            ]);
+    private static function matchAll($needles, $haystack) {
+        if (empty($needles)){
+            return false;
         }
-        return $school_data;
+
+        foreach($needles as $needle) {
+            if (stripos($haystack, $needle) == false) {
+                return false;
+            }
+        }
+        return true;
     }
 
     // get all schools
-    public static function getSchools($use_db=self::SEARCH_SCHOOLS_DATA_USE_DB) {
+    public static function getSchools() {
         $schools = [];
         $raw_data = [];
 
-        if ($use_db) {
-            $db = new \SQLite3(self::SCHOOLS_DATA_SQLITE_FILE);
-            $results = $db->query('SELECT * FROM schools');
-            while ($school = $results->fetchArray()) {
-                if ($school['parent_school_id']) {
-                    $school['parent_school'] = self::getSchoolById($school['parent_school_id']);
-                }
-                $schools[] = $school;
+        $db = new \SQLite3(VAFFASCHOOL_SQLITE_FILE);
+        $results = $db->query('SELECT * FROM schools');
+        while ($school = $results->fetchArray()) {
+            if ($school['parent_school_id']) {
+                $school['parent_school'] = self::getSchoolById($school['parent_school_id']);
             }
-        } else {
-            $raw_data = \vaffaschool_get_data_from_folder(self::SCHOOLS_RAW_DATA_DIR, explode(',', self::SCHOOLS_RAW_DATA_FILE_TYPES), '@graph');
-
-            $i=0;
-            foreach ($raw_data as $raw_record) {
-                $school_data = self::handleRawRecord($raw_record);
-
-                // add to others
-                $schools[] = $school_data;
-
-                $i++;
-            }
+            $schools[] = $school;
         }
 
         return $schools;
@@ -297,8 +219,8 @@ class Vaffaschool {
                 $score = 0;
 
                 // do simple search first
-                $school_name_score = \vaffaschool_match_get_score($needles, $school['name']);
-                $city_name_score = \vaffaschool_match_get_score($needles, $school['city_name']);
+                $school_name_score = self::matchGetScore($needles, $school['name']);
+                $city_name_score = self::matchGetScore($needles, $school['city_name']);
 
                 // if search key not in name, it's probably a crappy match
                 if (!$school_name_score) {
