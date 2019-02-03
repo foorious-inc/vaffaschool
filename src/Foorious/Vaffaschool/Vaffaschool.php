@@ -64,7 +64,7 @@ class Vaffaschool {
                 $school_data[$k] = $v;
             }
         }
-        if ($row['parent_school_id']) {
+        if (!empty($row['parent_school_id'])) {
             $school_data['parent_school_id'] = $parent_school_data['id']; // for compatibility
             $school_data['parent_school'] = $parent_school_data;
         }
@@ -277,7 +277,7 @@ class Vaffaschool {
                 $school['name'] = trim($school['name']);
 
                 // add some data
-                if ($school['parent_school_id']) {
+                if (!empty($school['parent_school_id'])) {
                     $school['parent_school'] = self::getSchoolById($school['parent_school_id']);
                 }
                 $school['sibling_schools'] = [
