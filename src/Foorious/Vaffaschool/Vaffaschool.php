@@ -135,7 +135,8 @@ class Vaffaschool {
             $stmt->execute([
                 ':school_id' => $school_id
             ]);
-            $school = self::getSchoolFromRow($stmt->fetch(\PDO::FETCH_ASSOC));
+            $row = $stmt->fetch(\PDO::FETCH_ASSOC);
+            $school = !empty($row) ? self::getSchoolFromRow($row) : null;
         } catch (\Exception $e) {
             // fail silently
         }
