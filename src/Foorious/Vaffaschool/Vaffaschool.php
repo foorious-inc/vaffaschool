@@ -46,6 +46,10 @@ class Vaffaschool {
 
     // fix some data, separate parent school from school
     private static function getSchoolFromRow($row) {
+        if (!is_array($row) || !$row) {
+            throw new \Exception('School row is not an array');
+        }
+
         // clean up row
         foreach ($row as $k=>$v) {
             if (is_numeric($k)) {
@@ -115,8 +119,8 @@ class Vaffaschool {
         $raw_data = [];
 
         $db = new \SQLite3(VAFFASCHOOL_SQLITE_FILE);
-        $results = $db->query('SELECT * FROM schools');
-        while ($row = $results->fetchArray()) {
+        $result = $db->query('SELECT * FROM schools');
+        while ($row = $result->fetchArray()) {
             $schools[] = self::getSchoolFromRow($row);
         }
 
@@ -124,6 +128,8 @@ class Vaffaschool {
     }
 
     public static function getSchoolById($school_id) {
+        $school = null;
+
         $pdo = self::getPdo();
         if (!$pdo) {
             throw new \Exception('no PDO');
@@ -136,7 +142,9 @@ class Vaffaschool {
                 ':school_id' => $school_id
             ]);
             $row = $stmt->fetch(\PDO::FETCH_ASSOC);
-            $school = !empty($row) ? self::getSchoolFromRow($row) : null;
+            if ($row) {
+                $school = self::getSchoolFromRow($row);
+            }
         } catch (\Exception $e) {
             // fail silently
         }
