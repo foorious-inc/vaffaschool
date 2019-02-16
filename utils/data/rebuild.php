@@ -1,5 +1,5 @@
 <?php
-define('VAFFASCHOOL_ALLOW_REBUILD', 0);
+define('VAFFASCHOOL_ALLOW_REBUILD', false);
 if (!VAFFASCHOOL_ALLOW_REBUILD) {
     die('Access forbidden!');
 }
@@ -62,7 +62,7 @@ try {
             city_id string,
             province_name string,
             province_id string,
-            province_license_plate_code string,
+            province_iso_code string,
             region_name string,
             region_id string,
             nuts3_2010_code string,
@@ -81,7 +81,7 @@ try {
             parent_school_city_id string,
             parent_school_province_name string,
             parent_school_province_id string,
-            parent_school_province_license_plate_code string,
+            parent_school_province_iso_code string,
             parent_school_region_name string,
             parent_school_region_id string,
             parent_school_nuts3_2010_code string
@@ -98,7 +98,7 @@ EOF;
     $queries[] = "CREATE INDEX index_city_id                            ON schools (city_id)";
     $queries[] = "CREATE INDEX index_province_name                      ON schools (province_name)";
     $queries[] = "CREATE INDEX index_province_id                      ON schools (province_id)";
-    $queries[] = "CREATE INDEX index_province_license_plate_code                      ON schools (province_license_plate_code)";
+    $queries[] = "CREATE INDEX index_province_iso_code                      ON schools (province_iso_code)";
     $queries[] = "CREATE INDEX index_region_name                        ON schools (region_name)";
     $queries[] = "CREATE INDEX index_region_id                        ON schools (region_id)";
     $queries[] = "CREATE INDEX index_nuts3_2010_code                    ON schools (nuts3_2010_code)";
@@ -111,7 +111,7 @@ EOF;
     $queries[] = "CREATE INDEX parent_school_index_city_id              ON schools (city_id)";
     $queries[] = "CREATE INDEX parent_school_index_province_name        ON schools (province_name)";
     $queries[] = "CREATE INDEX parent_school_index_province_id        ON schools (province_id)";
-    $queries[] = "CREATE INDEX parent_school_index_province_license_plate_code        ON schools (province_license_plate_code)";
+    $queries[] = "CREATE INDEX parent_school_index_province_iso_code        ON schools (province_iso_code)";
     $queries[] = "CREATE INDEX parent_school_index_region_name          ON schools (region_name)";
     $queries[] = "CREATE INDEX parent_school_index_region_id          ON schools (region_id)";
     $queries[] = "CREATE INDEX parent_school_index_nuts3_2010_code      ON schools (nuts3_2010_code)";
@@ -147,7 +147,7 @@ EOF;
                 city_id,
                 province_name,
                 province_id,
-                province_license_plate_code,
+                province_iso_code,
                 region_name,
                 region_id,
                 nuts3_2010_code,
@@ -166,7 +166,7 @@ EOF;
                 parent_school_city_id,
                 parent_school_province_name,
                 parent_school_province_id,
-                parent_school_province_license_plate_code,
+                parent_school_province_iso_code,
                 parent_school_region_name,
                 parent_school_region_id,
                 parent_school_nuts3_2010_code
@@ -230,7 +230,7 @@ EOF;
         $i++; $stmt->bindParam($i, $school['city_id'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $school['province_name'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $school['province_id'], \PDO::PARAM_STR);
-        $i++; $stmt->bindParam($i, $school['province_license_plate_code'], \PDO::PARAM_STR);
+        $i++; $stmt->bindParam($i, $school['province_iso_code'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $school['region_name'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $school['region_id'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $school['nuts3_2010_code'], \PDO::PARAM_STR);
@@ -249,7 +249,7 @@ EOF;
         $i++; $stmt->bindParam($i, $group['city_id'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $group['province_name'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $group['province_id'], \PDO::PARAM_STR);
-        $i++; $stmt->bindParam($i, $group['province_license_plate_code'], \PDO::PARAM_STR);
+        $i++; $stmt->bindParam($i, $group['province_iso_code'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $group['region_name'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $group['region_id'], \PDO::PARAM_STR);
         $i++; $stmt->bindParam($i, $group['nuts3_2010_code'], \PDO::PARAM_STR);
@@ -285,13 +285,15 @@ EOF;
         }
     }
 
-    echo '<h2>Done.</h2>';
+    echo "\n";
+    echo "\nDone.";
+    echo "\n\nDon't forget to disable access to this script!";
+    echo "\n";
 } catch (\Exception $e) {
     echo "\n";
-    echo '<br>';
+    echo "\n";
     echo 'ERROR: ' . $e->getMessage();
     echo "\n";
-    echo '<br>';
 
     exit;
 }

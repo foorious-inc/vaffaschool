@@ -248,29 +248,27 @@ function vaffaschool_handle_raw_record($raw_record) {
     $school_data['website'] = vaffaschool_fix_url($school_data['website']);
 
     // handle location data
-    try {
-        if (!$school_data['cad_code']) {
-            throw new \Exception('postcode missing, cannot get location (ID: ' . $school_data['id'] . ')');
-        }
-
-        $location = \Foorious\Komunist::getCityByCadCode($school_data['cad_code'], \Foorious\Komunist::RETURN_TYPE_ARRAY);
-        if (!$location) {
-            throw new \Exception('cannot find location via cadastral code (code: ' . $school_data['cad_code'] . ')');
-        }
-
-        // add location data
-        $school_data['city_name'] = $location['name'];
-        $school_data['city_id'] = $location['id'];
-        $school_data['province_name'] = $location['province']['name'];
-        $school_data['province_id'] = $location['province']['id'];
-        $school_data['province_license_plate_code'] = $location['license_plate_code'];
-        $school_data['region_name'] = $location['region']['name'];
-        $school_data['region_id'] = $location['region']['id'];
-        $school_data['nuts3_2010_code'] = $location['nuts3_2010_code'];
-    } catch (\Exception $e) {
-        // do nothing, if anything we can log this, but we have to output data and some missing data is normal
-        // throw new \Exception($e->getMessage());
+    if (!$school_data['cad_code']) {
+        throw new \Exception('postcode missing, cannot get location (ID: ' . $school_data['id'] . ')');
     }
+
+    $location = \Foorious\Komunist::getCityByCadCode($school_data['cad_code'], \Foorious\Komunist::RETURN_TYPE_ARRAY);
+    if (!$location) {
+        throw new \Exception('cannot find location via cadastral code (code: ' . $school_data['cad_code'] . ')');
+    }
+    if (!$location['province']) {
+        throw new \Exception('Location is missing province info');
+    }
+
+    // add location data
+    $school_data['city_name'] = $location['name'];
+    $school_data['city_id'] = $location['id'];
+    $school_data['province_name'] = $location['province']['name'];
+    $school_data['province_id'] = $location['province']['id'];
+    $school_data['province_iso_code'] = $location['province']['iso_code'];
+    $school_data['region_name'] = $location['region']['name'];
+    $school_data['region_id'] = $location['region']['id'];
+    $school_data['nuts3_2010_code'] = $location['nuts3_2010_code'];
 
     // handle school parent
     $school_data['parent_school_id'] = !empty($raw_record['miur:CODICEISTITUTORIFERIMENTO']) && $raw_record['miur:CODICEISTITUTORIFERIMENTO'] != $school_data['id'] ? $raw_record['miur:CODICEISTITUTORIFERIMENTO'] : '';
@@ -298,8 +296,14 @@ function vaffaschool_get_school_groups() {
     }
 
     $i=0;
+    $num_problems = 0;
     foreach ($raw_data as $raw_record) {
-        $school_data = vaffaschool_handle_raw_record($raw_record);
+        try {
+            $school_data = vaffaschool_handle_raw_record($raw_record);
+        } catch (\Exception $e) {
+            // do nothing, if anything we can log this, but we have to output data and some missing data is normal
+            $num_problems++;
+        }
 
         if ($school_data['parent_school_id']) {
             if (empty($schools[$school_data['parent_school_id']])) {
@@ -317,6 +321,9 @@ function vaffaschool_get_school_groups() {
 
         $i++;
     }
+
+    echo 'Problems with location: ' . $num_problems . '/' . count($raw_data);
+    echo "\n";
 
     return $schools;
 }
