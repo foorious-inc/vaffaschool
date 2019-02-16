@@ -27,7 +27,7 @@
     "minimum-stability": "dev",
     "require": {
         "wyndow/fuzzywuzzy": "^0.6.0",
-        "foorious-inc/komunist": "^0.4"
+        "foorious-inc/komunist": "^0.5"
     },
     "autoload": {
         "psr-4": {
