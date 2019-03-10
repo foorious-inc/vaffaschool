@@ -2,11 +2,10 @@
 function vaffaschool_get_pdo() {
     // check if file OK
     if (!is_file(VAFFASCHOOL_SQLITE_FILE)) {
-        echo VAFFASCHOOL_SQLITE_FILE;
-        throw new \Exception('cannot find DB file');
+        // this function is used only when rebuilding DB, it's probably fine if we can't find file
     }
     if (!is_readable(VAFFASCHOOL_SQLITE_FILE)) {
-        throw new \Exception('cannot read schools, DB file is not readable');
+        // this function is used only when rebuilding DB, it's probably fine if we can't find file
     }
     // check if we have Sqlite
     $has_sqlite = false;

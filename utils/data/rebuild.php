@@ -1,5 +1,5 @@
 <?php
-define('VAFFASCHOOL_ALLOW_REBUILD', false);
+define('VAFFASCHOOL_ALLOW_REBUILD', 0);
 if (!VAFFASCHOOL_ALLOW_REBUILD) {
     die('Access forbidden!');
 }
@@ -37,7 +37,7 @@ try {
     unlink(VAFFASCHOOL_SQLITE_FILE);
 
     // connect
-    $pdo  = new PDO('sqlite:/' . VAFFASCHOOL_SQLITE_FILE);
+    $pdo  = vaffaschool_get_pdo();
     if (!$pdo) {
         throw new \Exception("cannot open the database");
     }
@@ -124,8 +124,7 @@ EOF;
     }
 
     // write
-    function db_insert($school, $group) {
-        $pdo = vaffaschool_get_pdo();
+    function db_insert($school, $group, $pdo) {
         if (!$pdo) {
             throw new \Exception('no PDO');
         }
@@ -264,7 +263,7 @@ EOF;
 
         // insert group itself
         try {
-            db_insert($group_data, []);
+            db_insert($group_data, [], $pdo);
 
             echo '+ ';
         } catch (\Exception $e) {
@@ -275,7 +274,7 @@ EOF;
         if (!empty($group['schools'])) {
             foreach ($group['schools'] as $school_id => $school_data) {
                 try {
-                    db_insert($school_data, $group_data);
+                    db_insert($school_data, $group_data, $pdo);
 
                     echo '+ ';
                 } catch (\Exception $e) {
