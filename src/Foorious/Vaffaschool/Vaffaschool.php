@@ -176,6 +176,8 @@ class Vaffaschool {
 
     // search schools
     public static function getSchoolsBySearchKey($search_key) {
+        $time_start = time();
+
         try {
             // cut short if no search
             if (empty($search_key)) {
@@ -260,11 +262,6 @@ class Vaffaschool {
 
             $query = "SELECT * FROM schools WHERE " . implode(' OR ', $statements);
 
-            // foreach ($params as $p_key => $p_val) {
-            //     $query = str_replace($p_key, "'$p_val'", $query);
-            // }
-            // die('Actual query: ' . $query);
-
             try {
                 $stmt = $pdo->prepare($query);
                 $stmt->execute($params);
@@ -279,8 +276,6 @@ class Vaffaschool {
             // refine results
             $matches = [];
             foreach ($schools as $school) {
-                $score = 0;
-
                 // adjust score by keywords
                 $score = 0;
 
@@ -315,9 +310,6 @@ class Vaffaschool {
                 $school['name'] = trim($school['name']);
 
                 // add some data
-                if (!empty($school['parent_school_id'])) {
-                    $school['parent_school'] = self::getSchoolById($school['parent_school_id']);
-                }
                 $school['sibling_schools'] = [
                     'COMING',
                     'SOON'
