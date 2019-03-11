@@ -13,33 +13,43 @@ class Vaffaschool {
     private const SEARCH_SCHOOL_NAME_MULTIPLIER = 50;
     private const SEARCH_CITY_NAME_MULTIPLIER = 80;
 
+    private static $_pdo;
+
+    public static function setPdo($pdo) {
+        self::$_pdo = $pdo;
+    }
+
     private static function getPdo() {
-        // check if file OK
-        if (!is_file(VAFFASCHOOL_SQLITE_FILE)) {
-            echo VAFFASCHOOL_SQLITE_FILE;
-            throw new \Exception('cannot find DB file');
-        }
-        if (!is_readable(VAFFASCHOOL_SQLITE_FILE)) {
-            throw new \Exception('cannot read schools, DB file is not readable');
-        }
-        // check if we have Sqlite
-        $has_sqlite = false;
-        $avail_drivers = \PDO::getAvailableDrivers();
-        foreach ($avail_drivers as $driver_name) {
-            if ($driver_name == 'sqlite') {
-                $has_sqlite = true;
+        if (self::$_pdo) { // if PDO has been overriden
+            return self::$_pdo;
+        } else { // use Sqlite fallback
+            // check if file OK
+            if (!is_file(VAFFASCHOOL_SQLITE_FILE)) {
+                echo VAFFASCHOOL_SQLITE_FILE;
+                throw new \Exception('cannot find DB file');
             }
-        }
-        if (!$has_sqlite) {
-            throw new \Exception('cannot read schools, Sqlite PHP extension missing');
-        }
+            if (!is_readable(VAFFASCHOOL_SQLITE_FILE)) {
+                throw new \Exception('cannot read schools, DB file is not readable');
+            }
+            // check if we have Sqlite
+            $has_sqlite = false;
+            $avail_drivers = \PDO::getAvailableDrivers();
+            foreach ($avail_drivers as $driver_name) {
+                if ($driver_name == 'sqlite') {
+                    $has_sqlite = true;
+                }
+            }
+            if (!$has_sqlite) {
+                throw new \Exception('cannot read schools, Sqlite PHP extension missing');
+            }
 
-        $pdo = new \PDO('sqlite:/' . VAFFASCHOOL_SQLITE_FILE);
-        if (!$pdo) {
-            throw new \Exception("cannot open the database");
-        }
+            $pdo = new \PDO('sqlite:/' . VAFFASCHOOL_SQLITE_FILE);
+            if (!$pdo) {
+                throw new \Exception("cannot open the database");
+            }
 
-        $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+        }
 
         return $pdo;
     }
@@ -115,13 +125,25 @@ class Vaffaschool {
 
     // get all schools
     public static function getSchools() {
-        $schools = [];
-        $raw_data = [];
+        $time_start = time();
 
-        $db = new \SQLite3(VAFFASCHOOL_SQLITE_FILE);
-        $result = $db->query('SELECT * FROM schools');
-        while ($row = $result->fetchArray()) {
-            $schools[] = self::getSchoolFromRow($row);
+        $schools = [];
+
+        $pdo = self::getPdo();
+        if (!$pdo) {
+            throw new \Exception('no PDO');
+        }
+
+        $query = "SELECT * FROM schools";
+        try {
+            $stmt = $pdo->prepare($query);
+            $stmt->execute([]);
+
+            while ($row = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+                $schools[] = self::getSchoolFromRow($row);
+            }
+        } catch (\Exception $e) {
+            // fail silently
         }
 
         return $schools;
@@ -221,8 +243,9 @@ class Vaffaschool {
                 }
 
                 $param_key = ":needle_" . (count($params)+1);
-                $statements[] = "name LIKE $param_key OR city_name LIKE $param_key";
-                $params[$param_key] = '%' . $needle . '%';
+                $statements[] = "name LIKE {$param_key}_a OR city_name LIKE {$param_key}_b"; // MySQL PDO doesn't support prepared statements with multiple params (see https://stackoverflow.com/questions/18511645/use-bound-parameter-multiple-times)
+                $params[$param_key . '_a'] = '%' . $needle . '%';
+                $params[$param_key . '_b'] = '%' . $needle . '%';
 
                 // also search by ID
                 $param_key_exact = $param_key . '_exact';
@@ -234,7 +257,13 @@ class Vaffaschool {
             if (!$pdo) {
                 throw new \Exception('no PDO');
             }
+
             $query = "SELECT * FROM schools WHERE " . implode(' OR ', $statements);
+
+            // foreach ($params as $p_key => $p_val) {
+            //     $query = str_replace($p_key, "'$p_val'", $query);
+            // }
+            // die('Actual query: ' . $query);
 
             try {
                 $stmt = $pdo->prepare($query);
