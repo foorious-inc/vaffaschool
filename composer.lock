@@ -4,15 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "5ab1afae0ea08d8d89893aeca8f5364a",
+    "content-hash": "46df7d58ad98183bb0d1fd84be094c16",
     "packages": [
         {
             "name": "foorious-inc/komunist",
-            "version": "0.5.2",
+            "version": "0.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/foorious-inc/komunist.git",
-                "reference": "473ccd72e000f2cad2162a6502fd4069668ac68e"
+                "reference": "65e33667935294c3db13185a9a0b6155c6e9bbe8"
             },
             "type": "library",
             "autoload": {
@@ -30,7 +30,7 @@
                 }
             ],
             "description": "Utils/API for Italian comuni, provinces, and regions",
-            "time": "2019-07-01T15:58:28+00:00"
+            "time": "2019-07-01T16:18:43+00:00"
         },
         {
             "name": "phpspec/php-diff",
