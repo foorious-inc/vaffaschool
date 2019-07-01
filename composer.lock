@@ -1,18 +1,18 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b2b92eacd0af2e96383e33334b0c76f4",
+    "content-hash": "5ab1afae0ea08d8d89893aeca8f5364a",
     "packages": [
         {
             "name": "foorious-inc/komunist",
-            "version": "0.5.0",
+            "version": "0.5.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/foorious-inc/komunist.git",
-                "reference": "5f3d43b273a571df46450da83e83f62a24908ac8"
+                "reference": "473ccd72e000f2cad2162a6502fd4069668ac68e"
             },
             "type": "library",
             "autoload": {
@@ -30,7 +30,7 @@
                 }
             ],
             "description": "Utils/API for Italian comuni, provinces, and regions",
-            "time": "2019-02-16T16:51:48+00:00"
+            "time": "2019-07-01T15:58:28+00:00"
         },
         {
             "name": "phpspec/php-diff",
